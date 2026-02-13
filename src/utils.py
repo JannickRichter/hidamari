@@ -516,18 +516,18 @@ class ConfigUtil:
     def _createMissingMonitors(self, keys: set, config: dict):
         # we will set to Default new monitor sources
         for key in keys:
-            config['data_source'][key] = config['data_source']['Default']
+            config[CONFIG_KEY_DATA_SOURCE][key] = config[CONFIG_KEY_DATA_SOURCE]['Default']
         self.save(config)
         
     def _checkDefaultSource(self, config: dict):
         # Check if the 'Default' source is empty
-        default_source = config['data_source'].get('Default', '')
+        default_source = config[CONFIG_KEY_DATA_SOURCE].get('Default') or ''
         mode = config.get('mode')
         if mode == MODE_VIDEO and not os.path.isfile(default_source):
             logger.warning("[Config] Default source is empty or not a valid file. Setting to the first on available.")
             
             # Get all values from the 'data_source' dictionary
-            values = list(config['data_source'].values())
+            values = list(config[CONFIG_KEY_DATA_SOURCE].values())
             # If there are no values in 'data_source', return early
             if not values:
                 return
@@ -535,9 +535,27 @@ class ConfigUtil:
             # Set the 'Default' source to the first value available
             for value in values:
                 if len(value) > 0 and os.path.isfile(value):
-                    config['data_source']['Default'] = value
+                    config[CONFIG_KEY_DATA_SOURCE]['Default'] = value
                     self.save(config)
                     break
+
+    def _checkPeriodicSources(self, config: dict):
+        mode = config.get('mode')
+        if mode == MODE_VIDEO and config[CONFIG_KEY_IS_PERIODIC]:
+            i = 0
+            for key in config[CONFIG_KEY_DATA_SOURCE_TIME]:
+                if not os.path.isfile(config[CONFIG_KEY_DATA_SOURCE_TIME].get(key)):
+                    i += 1
+                    default_source = config[CONFIG_KEY_DATA_SOURCE].get('Default') or ''
+
+                    if not os.path.isfile(default_source):
+                        return
+
+                    config[CONFIG_KEY_DATA_SOURCE_TIME][key] = default_source
+            if i > 0:
+                self.save(config)
+                logger.warning("[Config] One or more periodic sources is empty, now filled with default source.")
+              
                     
     def load(self):
         if os.path.isfile(CONFIG_PATH):
@@ -549,6 +567,7 @@ class ConfigUtil:
                     if config.get("version") <= 3 and CONFIG_VERSION >= 4:
                         self._migrateV3To4(config)
                     self._checkDefaultSource(config)
+                    self._checkPeriodicSources(config)
                     self._checkMissingMonitors(config, CONFIG_TEMPLATE)
                     if self._check(config):
                         logs = []

@@ -5,6 +5,7 @@ import time
 import multiprocessing as mp
 from multiprocessing import Process
 import setproctitle
+from datetime import datetime
 
 from gi.repository import GLib
 from pydbus import SessionBus
@@ -73,6 +74,7 @@ class HidamariServer(object):
         self.args = args
         self._prev_mode = None
         self._player_count = 0
+        self._current_video_path = None
 
         # Processes
         # Switch to `forkserver` since v3.2 for performance. BTW `fork` didn't work (it crashes).
@@ -100,6 +102,10 @@ class HidamariServer(object):
         # Show main GUI
         if not args.background:
             self.show_gui()
+
+        if self.config[CONFIG_KEY_IS_PERIODIC]:
+            self._check_time_of_day()
+            GLib.timeout_add_seconds(3600, self._check_time_of_day)
 
         logger.info("[Server] Started")
 
@@ -220,6 +226,35 @@ class HidamariServer(object):
         self.gui_process = Process(name="hidamari-gui", target=gui_main, args=(
             self.version, self.pkgdatadir, self.localedir,))
         self.gui_process.start()
+
+    def get_video_path_by_time(self):
+        """Get video path by time"""
+        if self.config[CONFIG_KEY_IS_PERIODIC]:
+            hour = datetime.now().hour
+            if 4 <= hour < 12:
+                return self.config[CONFIG_KEY_DATA_SOURCE_TIME]["morning"]
+            elif 12 <= hour < 20:
+                return self.config[CONFIG_KEY_DATA_SOURCE_TIME]["afternoon"]
+            else:
+                return self.config[CONFIG_KEY_DATA_SOURCE_TIME]["night"]
+        else:
+            return self.config[CONFIG_KEY_DATA_SOURCE]["Default"]
+
+    def _check_time_of_day(self):
+        """Check time of day and play video accordingly"""
+        if self.config[CONFIG_KEY_IS_PERIODIC]:
+            video_path = self.get_video_path_by_time()
+            if self._current_video_path is None or video_path != self._current_video_path:
+                monitors = Monitors().get_monitors()
+                self._current_video_path = video_path
+
+                for monitor in monitors:
+                    self.config[CONFIG_KEY_MODE] = MODE_VIDEO
+                    self.config[CONFIG_KEY_DATA_SOURCE][monitor] = video_path
+                self._save_config()
+                self.video(video_path)
+            return True
+
 
     def quit(self):
         try:
