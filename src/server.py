@@ -5,7 +5,6 @@ import time
 import multiprocessing as mp
 from multiprocessing import Process
 import setproctitle
-from datetime import datetime
 
 from gi.repository import GLib
 from pydbus import SessionBus
@@ -17,7 +16,7 @@ try:
     from gui.control import main as gui_main
     from menu import show_systray_icon
     from monitor import *
-    from utils import ConfigUtil, EndSessionHandler, get_video_paths
+    from utils import ConfigUtil, EndSessionHandler, get_video_paths, get_video_path_by_time
 except ModuleNotFoundError:
     from hidamari.commons import *
     from hidamari.player.video_player import main as video_player_main
@@ -227,23 +226,10 @@ class HidamariServer(object):
             self.version, self.pkgdatadir, self.localedir,))
         self.gui_process.start()
 
-    def get_video_path_by_time(self):
-        """Get video path by time"""
-        if self.config[CONFIG_KEY_IS_PERIODIC]:
-            hour = datetime.now().hour
-            if 4 <= hour < 12:
-                return self.config[CONFIG_KEY_DATA_SOURCE_TIME]["morning"]
-            elif 12 <= hour < 20:
-                return self.config[CONFIG_KEY_DATA_SOURCE_TIME]["afternoon"]
-            else:
-                return self.config[CONFIG_KEY_DATA_SOURCE_TIME]["night"]
-        else:
-            return self.config[CONFIG_KEY_DATA_SOURCE]["Default"]
-
     def _check_time_of_day(self):
         """Check time of day and play video accordingly"""
         if self.config[CONFIG_KEY_IS_PERIODIC]:
-            video_path = self.get_video_path_by_time()
+            video_path = get_video_path_by_time(self.config)
             if self._current_video_path is None or video_path != self._current_video_path:
                 monitors = Monitors().get_monitors()
                 self._current_video_path = video_path

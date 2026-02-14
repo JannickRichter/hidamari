@@ -8,6 +8,7 @@ gi.require_version("Wnck", "3.0")
 from gi.repository import Gio, GLib, Wnck, Gdk
 
 import pydbus
+from datetime import datetime
 
 try:
     from commons import *
@@ -126,6 +127,19 @@ def get_video_paths():
         if "video" in mime_type:
             file_list.append(filepath)
     return sorted(file_list)
+
+def get_video_path_by_time(config):
+    """Get video path by time"""
+    if config[CONFIG_KEY_IS_PERIODIC]:
+        hour = datetime.now().hour
+        if 4 <= hour < 12:
+            return config[CONFIG_KEY_DATA_SOURCE_TIME]["morning"]
+        elif 12 <= hour < 20:
+            return config[CONFIG_KEY_DATA_SOURCE_TIME]["afternoon"]
+        else:
+            return config[CONFIG_KEY_DATA_SOURCE_TIME]["night"]
+    else:
+        return config[CONFIG_KEY_DATA_SOURCE]["Default"]
 
 
 """

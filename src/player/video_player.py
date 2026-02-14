@@ -22,7 +22,7 @@ try:
     from player.base_player import BasePlayer
     from menu import build_menu
     from commons import *
-    from utils import ActiveHandler, ConfigUtil, is_gnome, is_wayland, is_nvidia_proprietary, is_vdpau_ok, is_flatpak
+    from utils import ActiveHandler, ConfigUtil, is_gnome, is_wayland, is_nvidia_proprietary, is_vdpau_ok, is_flatpak, get_video_path_by_time
     from yt_utils import get_formats, get_best_audio, get_optimal_video
 except ModuleNotFoundError:
     from hidamari.player.base_player import BasePlayer
@@ -291,6 +291,7 @@ class VideoPlayer(BasePlayer):
 
         self.config = None
         self.reload_config()
+        self.existing_monitors = set()
 
         # Static wallpaper (currently for GNOME only)
         if is_gnome():
@@ -321,8 +322,12 @@ class VideoPlayer(BasePlayer):
         return PlayerWindow(gdk_monitor.get_model(), rect.width, rect.height, application=self)
 
     def do_activate(self):
+        self.existing_monitors = {m for m, w in self.windows.items() if w is not None}
         super().do_activate()
         self.data_source = self.config[CONFIG_KEY_DATA_SOURCE]
+
+    def _save_config(self):
+        ConfigUtil().save(self.config)
 
     def _on_monitor_added(self, _, gdk_monitor, *args):
         super()._on_monitor_added(_, gdk_monitor, *args)
@@ -414,7 +419,13 @@ class VideoPlayer(BasePlayer):
                     video_height.setdefault(monitor, None)
                     
             for (monitor, window) in self.windows.items():
-                source = data_source[monitor.get_model()] if monitor.get_model() in data_source and len(data_source[monitor.get_model()]) != 0 else data_source['Default']
+                if monitor in self.existing_monitors:
+                    continue
+                source = None
+                if self.config[CONFIG_KEY_IS_PERIODIC]:
+                    source = get_video_path_by_time(self.config)
+                else:
+                    source = data_source[monitor.get_model()] if monitor.get_model() in data_source and len(data_source[monitor.get_model()]) != 0 else data_source['Default']
                 logger.info(f"Setting source {source} to {monitor.get_model()}")
                 media = window.media_new(source)
                 """

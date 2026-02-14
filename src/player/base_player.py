@@ -76,11 +76,12 @@ class BasePlayer(Gtk.Application):
 
     def _on_size_changed(self, *args):
         logger.info("[Player] size-changed")
-        for monitor in self.windows:
-            rect = monitor.get_geometry()
-            x, y, width, height = rect.x, rect.y, rect.width, rect.height
-            monitor.win_resize(width, height)
-            monitor.win_move(x, y)
+        for monitor, window in self.windows.items():
+            if window:
+                rect = monitor.get_geometry()
+                x, y, width, height = rect.x, rect.y, rect.width, rect.height
+                window.set_size_request(width, height)
+                window.move(x, y)
 
     def _on_monitor_added(self, _, gdk_monitor, *args):
         logger.info("[Player] monitor-added")
