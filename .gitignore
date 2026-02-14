@@ -8,3 +8,7 @@ build/
 /venv/
 .flatpak/
 *.flatpak
+.venv/
+installiert
+.python-version
+.gitignore

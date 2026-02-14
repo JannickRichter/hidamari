@@ -161,8 +161,8 @@
             "buildsystem": "meson",
             "sources": [
                 {
-                    "type": "git",
-                    "url": "file:///home/jeffshee/Dev/hidamari"
+                    "type": "dir",
+                    "path": "."
                 }
             ]
         }

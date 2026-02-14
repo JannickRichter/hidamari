@@ -342,6 +342,8 @@ class VideoPlayer(BasePlayer):
             else:
                 self.pause_playback()
 
+    # Bug when monitor connected: New Monitor is not in monitor_states
+
     def _on_window_state_changed(self, state):
         self.is_any_maximized = state["is_any_maximized"]
         self.is_any_fullscreen = state["is_any_fullscreen"]
