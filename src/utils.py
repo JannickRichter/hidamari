@@ -131,7 +131,7 @@ def get_video_paths():
 def get_video_path_by_time(config):
     """Get video path by time"""
     if config[CONFIG_KEY_IS_PERIODIC]:
-        hour = datetime.now().hour
+        hour = (datetime.now().hour + config[CONFIG_KEY_TIME_ZONE]) % 24
         if 4 <= hour < 12:
             return config[CONFIG_KEY_DATA_SOURCE_TIME]["morning"]
         elif 12 <= hour < 20:

@@ -104,7 +104,7 @@ class HidamariServer(object):
 
         if self.config[CONFIG_KEY_IS_PERIODIC]:
             self._check_time_of_day()
-            GLib.timeout_add_seconds(3600, self._check_time_of_day)
+            GLib.timeout_add_seconds(600, self._check_time_of_day)
 
         logger.info("[Server] Started")
 
