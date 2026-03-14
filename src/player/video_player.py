@@ -525,7 +525,7 @@ class VideoPlayer(BasePlayer):
     def monitor_sync(self):
         primary_monitor = None
         for monitor, window in self.windows.items():
-            if monitor.is_primary:
+            if monitor.is_primary():
                 primary_monitor = monitor
                 break
         if primary_monitor:
